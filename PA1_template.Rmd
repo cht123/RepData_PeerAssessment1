@@ -4,22 +4,122 @@ output:
   html_document:
     keep_md: true
 ---
-
-
+***  
 ## Loading and preprocessing the data
+1. Download the file and read the CSV from the zip file.
+```{r get_data,cache=TRUE}
+temp <- tempfile()
+download.file("http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip",temp)
+activityData <- read.csv(unz(temp, "activity.csv"))
+unlink(temp)
+```
 
+2. Review the data
+```{r reviewData}
+head(activityData)
+```
 
 
 ## What is mean total number of steps taken per day?
-
-
-
+1. Summarize the total steps per day
+```{r meanSteps,message=FALSE,warning=FALSE,cache=TRUE}
+library(dplyr)
+totalStepsPerDay <- activityData %>%
+  group_by(date) %>%
+  summarize(totSteps = sum(steps, na.rm = T)) 
+head(totalStepsPerDay)
+```
+2. Create the histogram
+```{r stepsPerDayHist}
+hist(totalStepsPerDay$totSteps, 
+     main="Histogram of Total Steps per Day",
+     ylab = "Frequency",
+     xlab = "Total Steps per Day",
+     col = "wheat")
+```
+  
+3. Calculate the mean and median steps per day
+  
+```{r meanTotalSteps}
+mean(totalStepsPerDay$totSteps)
+``` 
+  
+```{r medainTotalSteps}
+median(totalStepsPerDay$totSteps)
+```  
+  
 ## What is the average daily activity pattern?
-
-
+1. Calculate the mean steps per interval  
+```{r meanIntervalSteps,message=FALSE,warning=FALSE,cache=TRUE}
+meanStepsPerInt <- activityData %>%
+  group_by(interval) %>%
+  summarize(meanSteps = mean(steps, na.rm = T)) 
+head(meanStepsPerInt)
+```
+2. Create the line graph of mean steps per interval
+```{r stepsPerIntLine}
+plot(meanStepsPerInt, 
+     type = "l",
+     main = "Mean Steps per Interval",
+     ylab = "Mean steps",
+     xlab = "Time interval",
+     col = "blue")
+```
+  
+3. Calculate the interval with max steps  
+```{r maxStepInt,message=FALSE,warning=FALSE}
+library(dplyr)
+arrange(meanStepsPerInt, desc(meanSteps))[1,]
+```
 
 ## Imputing missing values
+1. Calculate the number of NAs  
+```{r numOfNAs}
+sum(is.na(activityData$steps))
+```
+  
+2. Strategy for imputing values: use the dataset mean for the interval 
 
+3. Create dataset with imputed values  
+```{r imputeNAs, warning=FALSE,message=FALSE}
+library(sqldf)
 
+imputedActivityData <- sqldf('select case when ad.steps != "NA" then 
+                             ad.steps else mspi.meanSteps end as imputed_steps, ad.date, ad.interval 
+                             from activityData ad left join meanStepsPerInt mspi 
+                             on ad.interval = mspi.interval')
+head(imputedActivityData)
 
-## Are there differences in activity patterns between weekdays and weekends?
+```
+
+4. Summarize the imputed total steps per day
+```{r imputedMeanSteps,message=FALSE,warning=FALSE,cache=TRUE}
+library(dplyr)
+totalimpStepsPerDay <- imputedActivityData %>%
+  group_by(date) %>%
+  summarize(totSteps = sum(imputed_steps, na.rm = T)) 
+head(totalimpStepsPerDay)
+```
+  
+5. Create histogram  
+```{r imputedStepsPerDayHist}
+hist(totalimpStepsPerDay$totSteps, 
+     main="Histogram of Imputed Total Steps per Day",
+     ylab = "Frequency",
+     xlab = "Total Imputed Steps per Day",
+     col = "wheat")
+```
+  
+6. Calculate the mean and median imputed steps per day
+  
+```{r meanTotalimputedSteps}
+mean(totalimpStepsPerDay$totSteps)
+``` 
+  
+```{r medainTotalimputedSteps}
+median(totalimpStepsPerDay$totSteps)
+```  
+  
+## Are there differences in activity patterns between weekdays and weekends?  
+  
+
