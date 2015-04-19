@@ -121,5 +121,55 @@ median(totalimpStepsPerDay$totSteps)
 ```  
   
 ## Are there differences in activity patterns between weekdays and weekends?  
-  
 
+1.  Create a factor variable for weekend days (1 if weekend 0 if week day)
+
+```{r weekendAnalysis}
+activityData$weekDayNumber <- as.POSIXlt(activityData$date)$wday
+
+activityData$weekendInd <- ifelse(activityData$weekDayNumber==0 | activityData$weekDayNumber==6,1,0)
+head(activityData, 10)
+
+```
+
+2. Create summary by weekendInd and interval
+
+```{r weekendCompAnalysis}
+meanStepsPerWIInt <- activityData %>%
+  group_by(weekendInd, interval) %>%
+  summarize(meanSteps = mean(steps, na.rm = T)) 
+head(meanStepsPerWIInt)
+```
+
+3. Create the line graph of mean steps per interval for weekend
+```{r stepsPerWIIntLine}
+library(dplyr)
+weekend <- filter(meanStepsPerWIInt, weekendInd == 1)
+weekend <- weekend[,2:3]
+head(weekend)
+plot(weekend, 
+     type = "l",
+     main = "Mean Steps per Interval on weekend",
+     ylab = "Mean steps",
+     xlab = "Time interval",
+     col = "blue")
+
+
+```
+
+4. Create the line graph of mean steps per interval for weekday
+```{r stepsPerWIIntLineDay}
+library(dplyr)
+weekend <- filter(meanStepsPerWIInt, weekendInd == 0)
+weekend <- weekend[,2:3]
+head(weekend)
+plot(weekend, 
+     type = "l",
+     main = "Mean Steps per Interval on weekday",
+     ylab = "Mean steps",
+     xlab = "Time interval",
+     col = "blue")
+
+
+```
+5. There is more activity throughout the day on the weekends.  During the week activity is focused in the morning and afternoon.
